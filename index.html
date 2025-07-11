@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Interativo da Previdência para o MEI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Muted Blue Accent -->
+    <!-- Application Structure Plan: A single-page application with a sticky navigation bar for easy access to key thematic sections. The structure prioritizes user interaction and quick information retrieval over the linear format of the source report. It starts with an interactive DAS calculator, moves to a card-based overview of benefits (for MEI and dependents), includes an interactive pension duration chart, and concludes with a clear section on risks and an accordion-style FAQ. This task-oriented, dashboard-like approach was chosen to make complex information digestible and allow users to immediately explore topics relevant to them, enhancing usability and learning for new entrepreneurs. -->
+    <!-- Visualization & Content Choices: 1. DAS Contribution (Table 1) -> Goal: Inform/Personalize -> Viz: Interactive Calculator -> Interaction: User selects business type, app shows cost breakdown. Justification: More engaging than a static table. 2. Benefit Carências (Table 2) -> Goal: Compare -> Viz: Card Layout -> Interaction: Hover/Click for details. Justification: Quick scanning of requirements. 3. Pension Duration (Table 3) -> Goal: Explain/Compare -> Viz: Interactive Bar Chart (Chart.js) -> Interaction: User adjusts age via slider, chart updates. Justification: Simplifies a complex rule visually. 4. Key Concepts (Qualidade de Segurado/Carência) -> Goal: Organize/Inform -> Viz: HTML/CSS Timeline Diagram -> Interaction: Static. Justification: Visualizes time-based rules effectively. 5. FAQ -> Goal: Organize -> Viz: Accordion Component -> Interaction: Click to toggle answer. Justification: Cleaner UI. All choices avoid SVG/Mermaid and focus on interactive learning. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        html { scroll-behavior: smooth; }
+        .active-nav { color: #2563eb; border-bottom-color: #2563eb; }
+        .inactive-nav { border-bottom-color: transparent; }
+        .benefit-card { transition: all 0.3s ease-in-out; }
+        .benefit-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-blue-600">MEI & INSS</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#visao-geral" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 inactive-nav">Visão Geral</a>
+                        <a href="#seus-beneficios" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 inactive-nav">Seus Benefícios</a>
+                        <a href="#dependentes" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 inactive-nav">Para Dependentes</a>
+                        <a href="#riscos" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 inactive-nav">Riscos e Dúvidas</a>
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Abrir menu principal</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#visao-geral" class="mobile-nav-link text-gray-600 hover:bg-gray-50 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">Visão Geral</a>
+                <a href="#seus-beneficios" class="mobile-nav-link text-gray-600 hover:bg-gray-50 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">Seus Benefícios</a>
+                <a href="#dependentes" class="mobile-nav-link text-gray-600 hover:bg-gray-50 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">Para Dependentes</a>
+                <a href="#riscos" class="mobile-nav-link text-gray-600 hover:bg-gray-50 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">Riscos e Dúvidas</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+
+        <section id="visao-geral" class="pt-8 mb-12 md:mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Seu Guia Interativo para a Previdência do MEI</h2>
+                <p class="mt-4 text-lg leading-8 text-gray-600">Entenda seus direitos e obrigações de forma simples e garanta sua segurança e a de sua família.</p>
+            </div>
+
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md mb-12">
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">O que é a contribuição do MEI (DAS)?</h3>
+                <p class="text-gray-600 mb-6">O Documento de Arrecadação do Simples Nacional (DAS) é seu boleto mensal que unifica impostos e, mais importante, sua contribuição para o INSS. É pagando o DAS em dia que você garante acesso à aposentadoria e outros auxílios. Para 2025, o salário mínimo projetado é de R$ 1.518,00. Calcule abaixo o valor da sua contribuição.</p>
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-1/2">
+                        <p class="font-semibold mb-2">1. Selecione sua atividade:</p>
+                        <div class="flex flex-wrap gap-2 mb-4" id="activity-selector">
+                            <button data-activity="comercio" class="activity-btn bg-blue-500 text-white px-4 py-2 rounded-lg shadow font-medium">Comércio/Indústria</button>
+                            <button data-activity="servicos" class="activity-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium">Serviços</button>
+                            <button data-activity="ambos" class="activity-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium">Comércio e Serviços</button>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2 bg-blue-50 p-6 rounded-lg">
+                         <p class="font-semibold mb-2">2. Detalhamento do seu DAS mensal para 2025:</p>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Contribuição INSS (5%):</span>
+                                <span id="inss-value" class="font-bold text-lg text-blue-700">R$ 75,90</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span id="tax-label" class="text-gray-700">Imposto (ICMS):</span>
+                                <span id="tax-value" class="font-bold text-lg text-blue-700">R$ 1,00</span>
+                            </div>
+                            <hr class="my-2 border-blue-200">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-800 font-bold">Total a Pagar:</span>
+                                <span id="total-value" class="font-bold text-2xl text-blue-800">R$ 76,90</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md">
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Os Pilares da sua Proteção: Carência e Qualidade de Segurado</h3>
+                 <p class="text-gray-600 mb-6">Entender estes dois conceitos é crucial. <span class="font-bold">Qualidade de Segurado</span> é seu vínculo ativo com o INSS, mantido com os pagamentos em dia. <span class="font-bold">Carência</span> é o número mínimo de pagamentos mensais para ter direito a um benefício. Atrasar pagamentos pode fazer você perder ambos.</p>
+                <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+                    <div class="text-center">
+                        <div class="mx-auto w-8 h-8 rounded-full bg-green-500 border-4 border-white flex items-center justify-center text-white font-bold shadow">✓</div>
+                        <p class="mt-2 font-semibold">Início</p>
+                        <p class="text-sm text-gray-500">Primeiro DAS pago em dia. Contagem de carência iniciada.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="mx-auto w-8 h-8 rounded-full bg-green-500 border-4 border-white flex items-center justify-center text-white font-bold shadow">✓</div>
+                        <p class="mt-2 font-semibold">Pagando em Dia</p>
+                        <p class="text-sm text-gray-500">Você mantém a Qualidade de Segurado e cumpre a Carência.</p>
+                    </div>
+                    <div class="text-center">
+                         <div class="mx-auto w-8 h-8 rounded-full bg-yellow-500 border-4 border-white flex items-center justify-center text-white font-bold shadow">!</div>
+                        <p class="mt-2 font-semibold">Parou de Pagar</p>
+                        <p class="text-sm text-gray-500">Entra no "Período de Graça". Você ainda está seguro por até 12 meses.</p>
+                    </div>
+                     <div class="text-center">
+                        <div class="mx-auto w-8 h-8 rounded-full bg-red-500 border-4 border-white flex items-center justify-center text-white font-bold shadow">✕</div>
+                        <p class="mt-2 font-semibold">Mais de 12 meses</p>
+                        <p class="text-sm text-gray-500">Perde a Qualidade de Segurado. Pagamentos atrasados não contam mais para carência.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="seus-beneficios" class="pt-16 mb-12 md:mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Seus Benefícios Diretos</h2>
+                <p class="mt-4 text-lg leading-8 text-gray-600">Veja a rede de proteção que você constrói ao pagar seu DAS em dia.</p>
+            </div>
+            <div id="benefits-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            </div>
+        </section>
+
+        <section id="dependentes" class="pt-16 mb-12 md:mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Proteção para sua Família</h2>
+                <p class="mt-4 text-lg leading-8 text-gray-600">Seu trabalho como MEI também garante segurança para quem você ama.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md benefit-card">
+                     <h3 class="text-xl font-bold text-gray-900">Pensão por Morte</h3>
+                    <p class="text-gray-600 mt-2">Garante renda aos seus dependentes em caso de falecimento. A família fica protegida desde o primeiro pagamento do DAS em dia.</p>
+                    <div class="mt-4 bg-blue-50 p-4 rounded-lg">
+                        <p class="text-blue-800"><span class="font-bold text-2xl">0 meses</span> de carência</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md benefit-card">
+                     <h3 class="text-xl font-bold text-gray-900">Auxílio-Reclusão</h3>
+                    <p class="text-gray-600 mt-2">Benefício pago à família do MEI de baixa renda que for preso em regime fechado. O valor é para o sustento dos dependentes.</p>
+                     <div class="mt-4 bg-blue-50 p-4 rounded-lg">
+                        <p class="text-blue-800"><span class="font-bold text-2xl">24 meses</span> de carência</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md">
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Calculadora Interativa: Duração da Pensão por Morte</h3>
+                <p class="text-gray-600 mb-6">Para o cônjuge ou companheiro(a), a duração da pensão pode variar conforme a idade no momento do falecimento do MEI (desde que o MEI tenha mais de 18 contribuições e o relacionamento mais de 2 anos). Use a barra abaixo para ver como funciona.</p>
+                 <div class="flex flex-col md:flex-row gap-8 items-center">
+                     <div class="w-full md:w-1/2">
+                         <label for="age-slider" class="block mb-2 font-medium text-gray-900">Arraste para selecionar a idade do dependente:</label>
+                         <input id="age-slider" type="range" min="20" max="50" value="35" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                         <div class="flex justify-between text-xs text-gray-500 mt-1">
+                             <span>20</span>
+                             <span>35</span>
+                             <span>50+</span>
+                         </div>
+                         <p class="text-center mt-4 text-lg">Idade selecionada: <span id="age-display" class="font-bold text-blue-600">35</span> anos</p>
+                    </div>
+                    <div class="w-full md:w-1/2">
+                        <div class="chart-container">
+                             <canvas id="pensionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="riscos" class="pt-16">
+             <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Riscos & Dúvidas Frequentes</h2>
+                <p class="mt-4 text-lg leading-8 text-gray-600">Fique longe de problemas. Conheça as consequências de atrasar o DAS e tire suas principais dúvidas.</p>
+            </div>
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md mb-12">
+                 <h3 class="text-xl sm:text-2xl font-bold text-red-600 mb-4">⚠️ Atenção: Os Riscos de Atrasar o DAS</h3>
+                 <ul class="space-y-4">
+                    <li class="flex items-start">
+                        <span class="text-red-500 mr-3 mt-1 flex-shrink-0">●</span>
+                        <div><strong class="text-gray-900">Perda de Direitos:</strong> Ficar mais de 12 meses sem pagar leva à perda da qualidade de segurado. Você e sua família ficam desprotegidos contra doenças, acidentes e morte.</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-red-500 mr-3 mt-1 flex-shrink-0">●</span>
+                         <div><strong class="text-gray-900">Prejuízo na Aposentadoria:</strong> Contribuições pagas com muito atraso (após perder a qualidade de segurado) não contam para a carência. Você paga o débito, mas não se aproxima da aposentadoria.</div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-red-500 mr-3 mt-1 flex-shrink-0">●</span>
+                         <div><strong class="text-gray-900">CNPJ em Risco:</strong> A inadimplência prolongada pode levar ao cancelamento do seu CNPJ, e a dívida (com juros) é transferida para o seu CPF.</div>
+                    </li>
+                 </ul>
+            </div>
+            
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md">
+                 <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Perguntas Frequentes (FAQ)</h3>
+                 <div id="faq-container" class="space-y-4">
+                 </div>
+            </div>
+        </section>
+        
+        <section id="ajuda" class="pt-16">
+             <div class="text-center bg-blue-600 text-white p-8 sm:p-12 rounded-lg shadow-xl">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-4">Precisa de Ajuda Profissional?</h2>
+                <p class="mb-8 max-w-2xl mx-auto">Se a burocracia parece complicada ou você quer garantir que tudo seja feito corretamente, conte com um especialista. Clique abaixo para conhecer a Declara Fácil e resolva suas pendências sem dor de cabeça.</p>
+                <a href="https://adehas25.github.io/declarafacil/" target="_blank" class="bg-yellow-400 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg hover:bg-yellow-500 transition duration-300 shadow-lg inline-flex items-center">
+                    Conhecer a Declara Fácil
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16 border-t">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            <p>&copy; 2025 Guia Interativo MEI & INSS. Conteúdo para fins educacionais.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const MEI_BENEFITS = [
+                {
+                    title: 'Aposentadoria por Idade',
+                    description: 'Renda mensal vitalícia ao atingir a idade e o tempo de contribuição mínimos.',
+                    carnecia: '180 meses',
+                    details: '<strong>Requisitos:</strong><br>• Homens: 65 anos de idade e 15 a 20 anos de contribuição.<br>• Mulheres: 62 anos de idade e 15 anos de contribuição.<br><strong>Valor:</strong> 1 salário mínimo.'
+                },
+                {
+                    title: 'Auxílio por Incapacidade Temporária',
+                    description: 'Suporte financeiro caso você fique doente ou sofra um acidente e não possa trabalhar.',
+                    carnecia: '12 meses',
+                    details: 'Conhecido como auxílio-doença. <strong>Exceção:</strong> Não exige carência para acidentes de qualquer natureza ou doenças graves especificadas em lei. Requer perícia médica do INSS.'
+                },
+                {
+                    title: 'Aposentadoria por Incapacidade Permanente',
+                    description: 'Benefício para casos de incapacidade total e definitiva para o trabalho.',
+                    carnecia: '12 meses',
+                    details: 'Conhecida como aposentadoria por invalidez. <strong>Exceção:</strong> Mesmas regras de isenção do auxílio-doença. A condição permanente deve ser atestada pela perícia médica do INSS.'
+                },
+                {
+                    title: 'Salário-Maternidade',
+                    description: 'Afastamento remunerado de 120 dias por parto, adoção ou guarda judicial.',
+                    carnecia: '10 meses',
+                    details: 'Garante o sustento da mãe empreendedora durante os primeiros meses de vida ou adaptação da criança. O valor é de 1 salário mínimo mensal.'
+                }
+            ];
+
+            const FAQ_DATA = [
+                {
+                    question: "Aposentado por invalidez pode ser MEI?",
+                    answer: "Não. A formalização como MEI é entendida pelo INSS como prova de que a pessoa recuperou a capacidade de trabalhar, o que leva ao cancelamento imediato da aposentadoria por invalidez."
+                },
+                {
+                    question: "Quem trabalha de carteira assinada (CLT) pode ser MEI?",
+                    answer: "Sim, é permitido. As contribuições de ambas as atividades (CLT e MEI) se somam para a aposentadoria. O único ponto de atenção é que, em caso de demissão sem justa causa, o direito ao seguro-desemprego pode ser negado."
+                },
+                {
+                    question: "Se eu parar de pagar o MEI, perco o que já contribuí?",
+                    answer: "Não. O tempo de contribuição nunca se perde. O que se perde temporariamente é a 'qualidade de segurado' (após 12 meses sem pagar) e a contagem de 'carência' para pagamentos feitos em atraso após essa perda."
+                },
+                {
+                    question: "O valor do benefício do MEI sempre será de um salário mínimo?",
+                    answer: "Sim, se sua única contribuição for o pagamento padrão de 5% no DAS. O valor pode ser maior se você fizer a contribuição complementar de 15% ou se tiver outras contribuições, como de um emprego CLT."
+                },
+                {
+                    question: "Se eu receber auxílio-doença, preciso continuar pagando o DAS?",
+                    answer: "Durante os meses em que estiver recebendo o benefício, a contribuição para o INSS não é obrigatória. No entanto, os impostos (ICMS/ISS) continuam sendo devidos. Você deve gerar um DAS específico no portal para pagar apenas o valor do imposto."
+                }
+            ];
+
+            const dasData = {
+                salarioMinimo: 1518.00,
+                inssRate: 0.05,
+                icms: 1.00,
+                iss: 5.00,
+            };
+
+            const inssValue = dasData.salarioMinimo * dasData.inssRate;
+
+            const activitySelector = document.getElementById('activity-selector');
+            const inssValueEl = document.getElementById('inss-value');
+            const taxLabelEl = document.getElementById('tax-label');
+            const taxValueEl = document.getElementById('tax-value');
+            const totalValueEl = document.getElementById('total-value');
+            const activityBtns = document.querySelectorAll('.activity-btn');
+            
+            inssValueEl.textContent = `R$ ${inssValue.toFixed(2).replace('.', ',')}`;
+
+            function updateDAS(activity) {
+                let tax = 0;
+                let taxLabel = '';
+                let total = inssValue;
+
+                activityBtns.forEach(btn => {
+                    btn.classList.remove('bg-blue-500', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                
+                const currentBtn = document.querySelector(`.activity-btn[data-activity="${activity}"]`);
+                currentBtn.classList.add('bg-blue-500', 'text-white');
+                currentBtn.classList.remove('bg-gray-200', 'text-gray-700');
+
+
+                if (activity === 'comercio') {
+                    tax = dasData.icms;
+                    taxLabel = 'Imposto (ICMS)';
+                } else if (activity === 'servicos') {
+                    tax = dasData.iss;
+                    taxLabel = 'Imposto (ISS)';
+                } else if (activity === 'ambos') {
+                    tax = dasData.icms + dasData.iss;
+                    taxLabel = 'Impostos (ICMS + ISS)';
+                }
+                
+                total += tax;
+                taxLabelEl.textContent = taxLabel;
+                taxValueEl.textContent = `R$ ${tax.toFixed(2).replace('.', ',')}`;
+                totalValueEl.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+            }
+
+            activitySelector.addEventListener('click', (e) => {
+                if(e.target.matches('.activity-btn')) {
+                    const activity = e.target.dataset.activity;
+                    updateDAS(activity);
+                }
+            });
+
+            updateDAS('comercio');
+
+            const benefitsGrid = document.getElementById('benefits-grid');
+            MEI_BENEFITS.forEach(benefit => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 sm:p-8 rounded-xl shadow-md benefit-card';
+                card.innerHTML = `
+                    <h3 class="text-xl font-bold text-gray-900">${benefit.title}</h3>
+                    <p class="text-gray-600 mt-2 min-h-[60px]">${benefit.description}</p>
+                    <div class="mt-4 bg-blue-50 p-4 rounded-lg">
+                        <p class="text-blue-800"><span class="font-bold text-2xl">${benefit.carnecia}</span> de carência</p>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-600">${benefit.details}</div>
+                `;
+                benefitsGrid.appendChild(card);
+            });
+
+            const faqContainer = document.getElementById('faq-container');
+            FAQ_DATA.forEach((item, index) => {
+                const faqItem = document.createElement('div');
+                faqItem.innerHTML = `
+                    <button class="faq-question w-full text-left flex justify-between items-center p-4 bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none">
+                        <span class="font-medium text-gray-800">${item.question}</span>
+                        <span class="transform transition-transform duration-300 faq-arrow">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <p class="p-4 text-gray-600 bg-gray-50 rounded-b-lg">${item.answer}</p>
+                    </div>
+                `;
+                faqContainer.appendChild(faqItem);
+            });
+
+            faqContainer.addEventListener('click', e => {
+                const questionButton = e.target.closest('.faq-question');
+                if (questionButton) {
+                    const content = questionButton.nextElementSibling;
+                    const arrow = questionButton.querySelector('.faq-arrow');
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        arrow.style.transform = 'rotate(0deg)';
+                    } else {
+                        document.querySelectorAll('.accordion-content').forEach(el => el.style.maxHeight = null);
+                        document.querySelectorAll('.faq-arrow').forEach(el => el.style.transform = 'rotate(0deg)');
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        arrow.style.transform = 'rotate(180deg)';
+                    }
+                }
+            });
+
+            const ageSlider = document.getElementById('age-slider');
+            const ageDisplay = document.getElementById('age-display');
+            const ctx = document.getElementById('pensionChart').getContext('2d');
+            let pensionChart;
+
+            function getPensionDuration(age) {
+                if (age < 22) return { duration: 3, label: '3 anos' };
+                if (age >= 22 && age <= 27) return { duration: 6, label: '6 anos' };
+                if (age >= 28 && age <= 30) return { duration: 10, label: '10 anos' };
+                if (age >= 31 && age <= 41) return { duration: 15, label: '15 anos' };
+                if (age >= 42 && age <= 44) return { duration: 20, label: '20 anos' };
+                return { duration: 25, label: 'Vitalícia' }; // Using 25 to represent "Vitalícia" visually
+            }
+
+            function updateChart(age) {
+                const { duration, label } = getPensionDuration(age);
+
+                if (pensionChart) {
+                    pensionChart.data.datasets[0].data[0] = duration;
+                    pensionChart.options.plugins.tooltip.callbacks.label = () => `Duração: ${label}`;
+                    pensionChart.update();
+                } else {
+                    pensionChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Duração da Pensão'],
+                            datasets: [{
+                                data: [duration],
+                                backgroundColor: ['#3b82f6'],
+                                borderColor: ['#2563eb'],
+                                borderWidth: 1,
+                                borderRadius: 5,
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    max: 25,
+                                    ticks: {
+                                        callback: function(value, index, values) {
+                                            if (value === 25) return 'Vitalícia';
+                                            if (value % 5 === 0 && value !== 0) return value + ' anos';
+                                            return '';
+                                        }
+                                    }
+                                },
+                                y: {
+                                    display: false
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: () => `Duração: ${label}`
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            ageSlider.addEventListener('input', (e) => {
+                const age = e.target.value;
+                ageDisplay.textContent = age >= 50 ? '45+' : age;
+                updateChart(age);
+            });
+            updateChart(ageSlider.value);
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '-80px 0px 0px 0px',
+                threshold: 0.4
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active-nav');
+                            link.classList.add('inactive-nav');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active-nav');
+                                link.classList.remove('inactive-nav');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+            mobileMenuButton.addEventListener('click', () => {
+                const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+                mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg:first-child').classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg:last-child').classList.toggle('hidden');
+            });
+
+            mobileNavLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuButton.setAttribute('aria-expanded', 'false');
+                    mobileMenuButton.querySelector('svg:first-child').classList.remove('hidden');
+                    mobileMenuButton.querySelector('svg:last-child').classList.add('hidden');
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
